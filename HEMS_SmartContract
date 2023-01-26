@@ -1,0 +1,199 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract Introspection is Ownable {
+    using Counters for Counters.Counter;
+    uint256 public constant BATTERY_MAX_CAPACITY = 500;
+
+    struct Appliance {
+        uint8 id;
+        mapping(uint256 => uint256[96]) energyConsumption;
+    }
+
+    Counters.Counter private _applianceCounter;
+    mapping(uint8 => Appliance) private _appliances;
+
+    mapping(uint256 => uint256[96]) public _solarProduction;
+    mapping(uint256 => uint256[96]) public _batteryStateOfCharge;
+    mapping(uint256 => uint256[96]) public _gridEnergyBuyPrice;
+    mapping(uint256 => uint256[96]) public _solarEnergySellPrice;
+    mapping(uint256 => int256[96]) public _expenditure;
+
+    function addAppliance() public onlyOwner returns (uint8) {
+        require(_applianceCounter.current() < 255, "Too many appliances");
+        _applianceCounter.increment();
+
+        uint8 newApplianceId = uint8(_applianceCounter.current());
+        Appliance storage newAppliance = _appliances[newApplianceId];
+        newAppliance.id = newApplianceId;
+
+        return newApplianceId;
+    }
+
+    function setApplianceConsumption(
+        uint8 applianceId,
+        uint256 timestamp,
+        uint256[96] memory consumption
+    ) public onlyOwner {
+        require(
+            applianceId > 0 && applianceId <= _applianceCounter.current(),
+            "Invalid appliance"
+        );
+        uint256 offset = timestamp % 86400;
+        uint256 day = timestamp - offset;
+        _appliances[applianceId].energyConsumption[day] = consumption;
+    }
+
+    function setSolarProduction(
+        uint256 timestamp,
+        uint256[96] memory production
+    ) public onlyOwner {
+        uint256 offset = timestamp % 86400;
+        uint256 day = timestamp - offset;
+        _solarProduction[day] = production;
+    }
+
+    function setGridEnergyBuyPrice(
+        uint256 timestamp,
+        uint256[96] memory buyPrice
+    ) public onlyOwner {
+        uint256 offset = timestamp % 86400;
+        uint256 day = timestamp - offset;
+        _gridEnergyBuyPrice[day] = buyPrice;
+    }
+
+    function setSolarEnergySellPrice(
+        uint256 timestamp,
+        uint256[96] memory sellPrice
+    ) public onlyOwner {
+        uint256 offset = timestamp % 86400;
+        uint256 day = timestamp - offset;
+        _solarEnergySellPrice[day] = sellPrice;
+    }
+
+    function getApplianceConsumption(uint8 applianceId, uint256 day)
+        public
+        view
+        returns (uint256[96] memory)
+    {
+        return _appliances[applianceId].energyConsumption[day];
+    }
+
+    function getSolarProduction(uint256 day)
+        public
+        view
+        returns (uint256[96] memory)
+    {
+        return _solarProduction[day];
+    }
+
+    function getBatteryStateOfCharge(uint256 day)
+        public
+        view
+        returns (uint256[96] memory)
+    {
+        return _batteryStateOfCharge[day];
+    }
+
+    function getGridEnergyBuyPrice(uint256 day)
+        public
+        view
+        returns (uint256[96] memory)
+    {
+        return _gridEnergyBuyPrice[day];
+    }
+
+    function getSolarEnergySellPrice(uint256 day)
+        public
+        view
+        returns (uint256[96] memory)
+    {
+        return _solarEnergySellPrice[day];
+    }
+
+    function getExpenditure(uint256 day)
+        public
+        view
+        returns (int256[96] memory)
+    {
+        return _expenditure[day];
+    }
+
+    function getApplianceCount() public view returns (uint256) {
+        return _applianceCounter.current();
+    }
+
+    function processDay(uint256 day, uint256 batteryStateOfChargeAtDayStart)
+        public
+        onlyOwner
+    {
+        require(_applianceCounter.current() > 0, "No appliances");
+
+        uint256[96] memory totalApplianceConsumption;
+        for (uint8 i = 1; i < _applianceCounter.current(); i++) {
+            uint8 applianceId = uint8(i);
+            uint256[96] storage applianceConsumptionDay = _appliances[
+                applianceId
+            ].energyConsumption[day];
+
+            for (uint8 j = 0; j < 96; j++) {
+                totalApplianceConsumption[j] += applianceConsumptionDay[j];
+            }
+        }
+
+        uint256 batteryStateOfCharge = batteryStateOfChargeAtDayStart;
+        for (uint8 i = 0; i < 96; i++) {
+            if (_solarProduction[day][i] > totalApplianceConsumption[i]) {
+                uint256 batteryCharge = _solarProduction[day][i] -
+                    totalApplianceConsumption[i];
+
+                if (
+                    batteryCharge > BATTERY_MAX_CAPACITY - batteryStateOfCharge
+                ) {
+                    batteryCharge = BATTERY_MAX_CAPACITY - batteryStateOfCharge;
+                }
+                batteryStateOfCharge += batteryCharge;
+
+                uint256 leftOverSolarProduction = _solarProduction[day][i] -
+                    totalApplianceConsumption[i] -
+                    batteryCharge;
+
+                _expenditure[day][i] = -int256(
+                    _solarEnergySellPrice[day][i] * leftOverSolarProduction
+                );
+            } else {
+                uint256 thirtyPercentOfMaxBatteryCharge = (BATTERY_MAX_CAPACITY *
+                        30) / 100;
+
+                uint256 availableBatteryDischarge = 0;
+                if (batteryStateOfCharge > thirtyPercentOfMaxBatteryCharge) {
+                    availableBatteryDischarge =
+                        batteryStateOfCharge -
+                        thirtyPercentOfMaxBatteryCharge;
+                }
+
+                uint256 batteryDischarge = totalApplianceConsumption[i] -
+                    _solarProduction[day][i];
+
+                if (batteryDischarge > availableBatteryDischarge) {
+                    batteryDischarge = availableBatteryDischarge;
+                }
+                batteryStateOfCharge -= batteryDischarge;
+
+                uint256 toBeBoughtEnergy = totalApplianceConsumption[i] -
+                    _solarProduction[day][i] -
+                    batteryDischarge;
+
+                _expenditure[day][i] = int256(
+                    _gridEnergyBuyPrice[day][i] * toBeBoughtEnergy
+                );
+            }
+
+            _batteryStateOfCharge[day][i] = batteryStateOfCharge;
+        }
+    }
+}
