@@ -1,0 +1,65 @@
+This code is a Solidity smart contract for tracking energy consumption of appliances, as well as energy production and pricing. 
+The contract uses the OpenZeppelin library to inherit the "Ownable" contract for access control, as well as the "Counters" contract for counter management. 
+The contract defines a struct for Appliance to store energy consumption data. The contract also maintains mapping variables for tracking solar production, 
+battery state of charge, grid energy buy price, solar energy sell price, and expenditure.
+The contract provides functions for adding appliances, setting energy consumption and production data, and retrieving data for appliances, solar production, and pricing. 
+The contract also provides a function for scheduling loads using input arrays for solar production and appliance energy consumption.
+
+
+
+
+How to run the code on Remix IDE
+
+Prerequisites
+A web browser
+A Remix IDE account (https://remix.ethereum.org/)
+
+Step 1: Access the Remix IDE
+Open your web browser and go to https://remix.ethereum.org/. You should now be able to see the Remix IDE website.
+
+Step 2: Create a new file
+Click on the "File" menu and select "New File". A new tab should open in the editor area with the default name "Untitled".
+
+Step 3: Copy the code
+Copy the code you want to run on Remix and paste it into the new file in the editor area.
+
+Step 4: Save the file
+Click on the "File" menu and select "Save". Give your file a name and hit "Enter" to save it.
+
+Step 5: Compile the code
+Click on the "Compile" tab. You should now see the code you just saved in the editor area. If there are no errors, you should see a green "Successful compilation" message at the bottom of the editor area.
+
+Step 6: Deploy the code
+Click on the "Run" tab. Select "remix VM LONDON" from the environment dropdown menu. You should now see a form that allows you to deploy your code.
+Click the "Deploy" button. The code should now be deployed to the virtual machine. If there are no errors, you should see a message indicating that the deployment was successful.
+
+Step 7: Interact with the code
+Click on the "Contracts" tab. You should now see a list of the contracts that are currently deployed on the virtual machine.
+Click on the contract you just deployed to see its methods and data. You can interact with the contract by calling its methods and checking its data.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+You can:
+- Add appliances (max 256)
+- Add the consumption of each appliance
+example: 
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 0, 0, 0, 0, 0, 0, 0]
+
+- Add the battery initial state of charge
+- Add the battery maximum capacity
+- Add the energy prices
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Warnings!!!
+
+Solidity does not allow decimal numbers to be written, so when entering consumption, production and battery values, these must be whole numbers
+
+The smart contract is written so that only 2 flexible charges are added. 
+If you want to add more than 2 flexible loads you need to change the "scheduleLoads" function.
+
+
+
+
+
+
