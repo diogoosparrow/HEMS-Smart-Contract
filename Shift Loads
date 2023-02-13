@@ -1,0 +1,103 @@
+from statistics import median
+
+SolarForecast = [0,0,0,0,1,4,12,3,4,8,0,0,12,6,7,8,9,0,0,0,1,2,0,0,0,0,0]
+consumption1= [1,2,3,4,5,6,7,0,0,0,0,0,0]     // input the values of consumption
+consumption2= [1,2,3,4,5,6,7,0,0,0,11,0,0] 
+consumption3= [1,2,3,4,5,6,7,0,0,12,13,0,0] 
+
+cons1= [] # só os valores >0
+cons2= [] # só os valores >0
+cons3= [] # só os valores >0
+
+for valor in consumo1:
+    if valor > 0:
+        cons1.append(valor)
+        
+for valor in consumo2:
+    if valor > 0:
+        cons2.append(valor)
+        
+for valor in consumo3:
+    if valor > 0:
+        cons3.append(valor)
+        
+media_1= median(cons1) # media da consumo1 já com os valores 0 ignorados
+media_2= median(cons2)
+media_3= median(cons3)
+
+tam_media= [[len(cons1), media_1], [len(cons2), media_2], [len(cons3), media_3]]
+# ordenar da media + pequena para a maior
+medias_ord = sorted(tam_media, key = lambda x: x[1]) 
+
+comprimentos= [] 
+for tam_med in medias_ord:
+    comprimentos.append(tam_med[0]) 
+    
+comp1= comprimentos[0]
+comp2= comprimentos[1]
+comp3= comprimentos[2]
+
+
+def funcaoAuxiliar1():
+    medias=[]
+    maior_media=0
+    posicao=0
+    for i in range(len(painelSolar)):
+        soma=0
+        for j in range(0, comp1):
+            soma += painelSolar[j]
+            
+        media= soma/comp1
+        medias.append(media)
+    
+    for i in range (len(medias)):
+        if medias[i] >= maior_media:
+            maior_media= medias[i]
+            posicao= i
+    
+    return maior_media, posicao
+
+maior_media, primeira_posicao= funcaoAuxiliar1()
+
+def funcaoAuxiliar2(maior_media):
+    medias=[]
+    segunda_media=0
+    posicao=0
+    for i in range(len(painelSolar)):
+        soma=0
+        for j in range(0, comp2):
+            soma += painelSolar[j]
+            
+        media= soma/comp2
+        medias.append(media)
+    
+    for i in range (len(medias)):
+        if medias[i] >= segunda_media and medias[i] < maior_media:
+            segunda_media= medias[i]
+            posicao= i
+    
+    return segunda_media, posicao
+
+segunda_media, segunda_posicao= funcaoAuxiliar2(maior_media)
+
+def funcaoAuxiliar3(maior_media, segunda_media):
+    medias=[]
+    terceira_media=0
+    posicao=0
+    for i in range(len(painelSolar)):
+        soma=0
+        for j in range(0, comp3):
+            soma += painelSolar[j]
+            
+        media= soma/comp3
+        medias.append(media)
+    
+    for i in range (len(medias)):
+        if medias[i] >= terceira_media and medias[i] < maior_media and medias[i] < segunda_media:
+            terceira_media= medias[i]
+            posicao= i
+    
+    return terceira_media, posicao
+
+terceira_media, terceira_posicao= funcaoAuxiliar3(maior_media, segunda_media)
+
